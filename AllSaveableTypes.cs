@@ -130,27 +130,28 @@ namespace STypes
             this.scale = scale;
         }
 
-        // Implicit conversion from custom Transform to Unity's Transform
-        public static implicit operator UnityEngine.Transform(Transform customTransform)
-        {
-            UnityEngine.GameObject tempObject = new UnityEngine.GameObject();
-            UnityEngine.Transform unityTransform = tempObject.transform;
-
-            unityTransform.position = customTransform.position;
-            unityTransform.rotation = customTransform.rotation;
-            unityTransform.localScale = customTransform.scale;
-
-            return unityTransform;
-        }
-
-        // Implicit conversion from Unity's Transform to custom Transform
-        public static implicit operator Transform(UnityEngine.Transform unityTransform)
+        // Explicit factory from Unity Transform (world-space snapshot)
+        public static Transform FromUnity(UnityEngine.Transform unityTransform)
         {
             return new Transform(
                 unityTransform.position,
                 unityTransform.rotation,
                 unityTransform.localScale
             );
+        }
+
+        // Apply stored state back to an existing Transform
+        public void ApplyTo(UnityEngine.Transform unityTransform)
+        {
+            unityTransform.position = position;
+            unityTransform.rotation = rotation;
+            unityTransform.localScale = scale;
+        }
+
+        // Implicit conversion from Unity's Transform to custom Transform (read-only, no allocations)
+        public static implicit operator Transform(UnityEngine.Transform unityTransform)
+        {
+            return FromUnity(unityTransform);
         }
     }
 
@@ -171,22 +172,8 @@ namespace STypes
             this.isKinematic = isKinematic;
         }
 
-        // Implicit conversion from custom Rigidbody2D to Unity's Rigidbody2D
-        public static implicit operator UnityEngine.Rigidbody2D(Rigidbody2D customRb)
-        {
-            UnityEngine.GameObject tempObject = new UnityEngine.GameObject();
-            UnityEngine.Rigidbody2D unityRb = tempObject.AddComponent<UnityEngine.Rigidbody2D>();
-
-            unityRb.linearVelocity = customRb.velocity;
-            unityRb.mass = customRb.mass;
-            unityRb.linearDamping = customRb.drag;
-            unityRb.isKinematic = customRb.isKinematic;
-
-            return unityRb;
-        }
-
-        // Implicit conversion from Unity's Rigidbody2D to custom Rigidbody2D
-        public static implicit operator Rigidbody2D(UnityEngine.Rigidbody2D unityRb)
+        // Explicit factory from Unity's Rigidbody2D (state snapshot)
+        public static Rigidbody2D FromUnity(UnityEngine.Rigidbody2D unityRb)
         {
             return new Rigidbody2D(
                 unityRb.linearVelocity,
@@ -194,6 +181,21 @@ namespace STypes
                 unityRb.linearDamping,
                 unityRb.isKinematic
             );
+        }
+
+        // Apply stored state back to an existing Rigidbody2D
+        public void ApplyTo(UnityEngine.Rigidbody2D unityRb)
+        {
+            unityRb.linearVelocity = velocity;
+            unityRb.mass = mass;
+            unityRb.linearDamping = drag;
+            unityRb.isKinematic = isKinematic;
+        }
+
+        // Implicit conversion from Unity's Rigidbody2D to custom Rigidbody2D (read-only, no allocations)
+        public static implicit operator Rigidbody2D(UnityEngine.Rigidbody2D unityRb)
+        {
+            return FromUnity(unityRb);
         }
     }
 
@@ -213,22 +215,8 @@ namespace STypes
             this.isKinematic = isKinematic;
         }
 
-        // Implicit conversion from custom Rigidbody to Unity's Rigidbody (3D)
-        public static implicit operator UnityEngine.Rigidbody(Rigidbody customRb)
-        {
-            UnityEngine.GameObject tempObject = new UnityEngine.GameObject();
-            UnityEngine.Rigidbody unityRb = tempObject.AddComponent<UnityEngine.Rigidbody>();
-
-            unityRb.linearVelocity = customRb.velocity;
-            unityRb.mass = customRb.mass;
-            unityRb.linearDamping = customRb.drag;
-            unityRb.isKinematic = customRb.isKinematic;
-
-            return unityRb;
-        }
-
-        // Implicit conversion from Unity's Rigidbody to custom Rigidbody
-        public static implicit operator Rigidbody(UnityEngine.Rigidbody unityRb)
+        // Explicit factory from Unity's Rigidbody (state snapshot)
+        public static Rigidbody FromUnity(UnityEngine.Rigidbody unityRb)
         {
             return new Rigidbody(
                 unityRb.linearVelocity,
@@ -236,6 +224,21 @@ namespace STypes
                 unityRb.linearDamping,
                 unityRb.isKinematic
             );
+        }
+
+        // Apply stored state back to an existing Rigidbody
+        public void ApplyTo(UnityEngine.Rigidbody unityRb)
+        {
+            unityRb.linearVelocity = velocity;
+            unityRb.mass = mass;
+            unityRb.linearDamping = drag;
+            unityRb.isKinematic = isKinematic;
+        }
+
+        // Implicit conversion from Unity's Rigidbody to custom Rigidbody (read-only, no allocations)
+        public static implicit operator Rigidbody(UnityEngine.Rigidbody unityRb)
+        {
+            return FromUnity(unityRb);
         }
     }
 
@@ -364,7 +367,7 @@ namespace STypes
                 m20 = customMatrix.m20,
                 m21 = customMatrix.m21,
                 m22 = customMatrix.m22,
-                m33 = 0 // Fill the unused part with identity elements
+                m33 = 1f // Fill the unused part with identity elements
             };
         }
 
@@ -422,15 +425,19 @@ namespace STypes
     [System.Serializable]
     public struct CustomMatrix
     {
-        public int Rows { get; private set; }  // Number of rows
-        public int Columns { get; private set; }  // Number of columns
-        public float[] Data;  // Matrix data
+        // Unity serializes fields, not auto-properties, so keep explicit fields
+        public int rows;    // Number of rows
+        public int columns; // Number of columns
+        public float[] data;  // Matrix data
+
+        public int Rows => rows;
+        public int Columns => columns;
 
         public CustomMatrix(int rows, int columns)
         {
-            this.Rows = rows;
-            this.Columns = columns;
-            this.Data = new float[rows * columns];  // Initialize data array
+            this.rows = rows;
+            this.columns = columns;
+            this.data = new float[rows * columns];  // Initialize data array
         }
 
         // Get or set elements of the matrix
@@ -440,13 +447,13 @@ namespace STypes
             {
                 if (row < 0 || row >= Rows || column < 0 || column >= Columns)
                     throw new System.IndexOutOfRangeException("Matrix index out of range.");
-                return Data[row * Columns + column];  // Access element via calculated index
+                return data[row * Columns + column];  // Access element via calculated index
             }
             set
             {
                 if (row < 0 || row >= Rows || column < 0 || column >= Columns)
                     throw new System.IndexOutOfRangeException("Matrix index out of range.");
-                Data[row * Columns + column] = value;  // Set the element
+                data[row * Columns + column] = value;  // Set the element
             }
         }
 
@@ -490,22 +497,7 @@ namespace STypes
         // Implicit cast to float array for serialization
         public static implicit operator float[](CustomMatrix matrix)
         {
-            return matrix.Data;
-        }
-
-        // Implicit cast from float array
-        public static implicit operator CustomMatrix(float[] data)
-        {
-            // Assuming input data represents a 4x4 matrix for simplicity
-            if (data.Length != 16)
-                throw new System.InvalidOperationException("Array must contain 16 elements for a 4x4 matrix.");
-
-            CustomMatrix matrix = new CustomMatrix(4, 4);
-            for (int i = 0; i < data.Length; i++)
-            {
-                matrix.Data[i] = data[i];
-            }
-            return matrix;
+            return matrix.data;
         }
     }
 
@@ -531,13 +523,17 @@ namespace STypes
                 if (string.IsNullOrEmpty(_numberString))
                     _numberString = "0";
 
-                return System.Numerics.BigInteger.Parse(_numberString);
+                if (!System.Numerics.BigInteger.TryParse(_numberString, out var parsed))
+                {
+                    throw new FormatException($"Invalid BigInteger serialized value: '{_numberString}'");
+                }
+
+                return parsed;
   
             }
             set
             {
                 _numberString = value.ToString();
-                Debug.Log($"[BigSten] Value updated to: {_numberString}");
             }
         }
 
@@ -686,21 +682,25 @@ namespace STypes
     [System.Serializable]
     public class MultiDimensionalList<T>
     {
-        [SerializeField] private List<List<T>> _data;
+        [SerializeField] private List<T> _data;
+        [SerializeField] private int _rows;
+        [SerializeField] private int _columns;
 
-        public int Rows => _data.Count;
-        public int Columns => _data.Count > 0 ? _data[0].Count : 0;
+        public int Rows => _rows;
+        public int Columns => _columns;
 
         public MultiDimensionalList(int rows, int columns, T defaultValue = default)
         {
-            _data = new List<List<T>>(rows);
-            for (int i = 0; i < rows; i++)
+            if (rows < 0) throw new ArgumentOutOfRangeException(nameof(rows));
+            if (columns < 0) throw new ArgumentOutOfRangeException(nameof(columns));
+
+            _rows = rows;
+            _columns = columns;
+            _data = new List<T>(rows * columns);
+
+            for (int i = 0; i < rows * columns; i++)
             {
-                _data.Add(new List<T>(columns));
-                for (int j = 0; j < columns; j++)
-                {
-                    _data[i].Add(defaultValue);
-                }
+                _data.Add(defaultValue);
             }
         }
 
@@ -708,63 +708,55 @@ namespace STypes
         {
             get
             {
-                if (IsValidIndex(row, column))
-                    return _data[row][column];
+                if (!IsValidIndex(row, column))
+                    throw new IndexOutOfRangeException($"Index ({row}, {column}) is out of range.");
 
-                Debug.LogWarning($"[MultiDimensionalList] Index ({row}, {column}) is out of range.");
-                return default;
+                return _data[GetIndex(row, column)];
             }
             set
             {
-                if (IsValidIndex(row, column))
-                {
-                    _data[row][column] = value;
-                    Debug.Log($"[MultiDimensionalList] Updated value at ({row}, {column}) to {value}.");
-                }
-                else
-                {
-                    Debug.LogWarning($"[MultiDimensionalList] Index ({row}, {column}) is out of range.");
-                }
+                if (!IsValidIndex(row, column))
+                    throw new IndexOutOfRangeException($"Index ({row}, {column}) is out of range.");
+
+                _data[GetIndex(row, column)] = value;
             }
         }
 
         public void Resize(int newRows, int newColumns, T defaultValue = default)
         {
-            if (newRows < 0 || newColumns < 0)
-            {
-                Debug.LogWarning("[MultiDimensionalList] Resize dimensions must be non-negative.");
-                return;
-            }
+            if (newRows < 0) throw new ArgumentOutOfRangeException(nameof(newRows));
+            if (newColumns < 0) throw new ArgumentOutOfRangeException(nameof(newColumns));
 
-            while (_data.Count < newRows)
-            {
-                _data.Add(new List<T>(newColumns));
-            }
+            var newData = new List<T>(newRows * newColumns);
 
-            while (_data.Count > newRows)
+            for (int r = 0; r < newRows; r++)
             {
-                _data.RemoveAt(_data.Count - 1);
-            }
-
-            for (int i = 0; i < _data.Count; i++)
-            {
-                while (_data[i].Count < newColumns)
+                for (int c = 0; c < newColumns; c++)
                 {
-                    _data[i].Add(defaultValue);
-                }
-
-                while (_data[i].Count > newColumns)
-                {
-                    _data[i].RemoveAt(_data[i].Count - 1);
+                    if (IsValidIndex(r, c))
+                    {
+                        newData.Add(this[r, c]);
+                    }
+                    else
+                    {
+                        newData.Add(defaultValue);
+                    }
                 }
             }
 
-            Debug.Log($"[MultiDimensionalList] Resized to ({newRows}, {newColumns}).");
+            _rows = newRows;
+            _columns = newColumns;
+            _data = newData;
         }
 
         public bool IsValidIndex(int row, int column)
         {
-            return row >= 0 && row < _data.Count && column >= 0 && column < _data[row].Count;
+            return row >= 0 && row < _rows && column >= 0 && column < _columns;
+        }
+
+        private int GetIndex(int row, int column)
+        {
+            return row * _columns + column;
         }
 
         public override string ToString()
