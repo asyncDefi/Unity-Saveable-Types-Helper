@@ -759,20 +759,7 @@ namespace STypes
             return row * _columns + column;
         }
 
-        public override string ToString()
-        {
-            string result = "[MultiDimensionalList]\n";
-            for (int i = 0; i < Rows; i++)
-            {
-                result += "[ ";
-                for (int j = 0; j < Columns; j++)
-                {
-                    result += _data[i][j] + " ";
-                }
-                result += "]\n";
-            }
-            return result;
-        }
+ 
     }
 
     #endregion
